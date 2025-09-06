@@ -146,14 +146,5 @@ curl -s https://halving-nito.nitopool.fr/nito_summary.php
 
 ---
 
-## 6) Mise à jour ultérieure
 
-Remplacez les fichiers, puis remettez les droits :
-
-```bash
-sudo cp index.html /var/www/halving-nito/index.html
-sudo cp nito_summary.php /var/www/halving-nito/nito_summary.php
-sudo chown -R www-data:www-data /var/www/halving-nito
-sudo find /var/www/halving-nito -type f -exec chmod 664 {} \;
-```
 
