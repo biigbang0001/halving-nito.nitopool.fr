@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>Nito Halving Countdown</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
@@ -50,7 +50,7 @@
 
   <div class="container">
     <h1>🚀 Nito Halving Countdown</h1>
-    <div class="subtitle"></div>
+    <div class="subtitle">1 block = 60 seconds</div>
 
     <div class="grid">
       <div class="card"><h3>Current Block</h3><div class="value" id="v_block">-</div></div>
@@ -95,8 +95,9 @@
 
   <script>
     const API_URL='/nito_summary.php';
-    const FETCH_DEFAULT_MS=15000;
-    const FETCH_NEAR_MS=10000;
+    const BLOCK_SEC=60;
+    const REFRESH_DEFAULT=15000;
+    const REFRESH_NEAR=10000;
     const NEAR_THRESHOLD=100;
 
     const $=id=>document.getElementById(id);
@@ -104,51 +105,51 @@
     const fmtInt0=n=>Math.round(Number(n||0)).toLocaleString();
     const fmtClock=ms=>{try{return new Date(ms).toLocaleTimeString(undefined,{hour12:false})}catch{return'-'}};
 
-    let S={block:0,nextHalvingBlock:0,currentReward:512,nextReward:256,supply:0,difficulty:0,hashrate:{human:'-'},blocksRemaining:0,blockTimeSec:60,as_of_ms:0,targetHalvingTs:0};
-    let fetchTimer=null,currentFetchMS=FETCH_DEFAULT_MS;
+    let S={block:0,nextHalvingBlock:0,currentReward:512,nextReward:256,supply:0,difficulty:0,hashrate:{human:'-'},blocksRemaining:0,as_of_ms:0,remaining_sec:0};
+    let timer=null, refresh=REFRESH_DEFAULT;
 
     function renderStatic(){
       $('v_block').textContent=fmtInt(S.block);
       $('v_next').textContent=fmtInt(S.nextHalvingBlock);
       $('v_reward_now').textContent=S.currentReward+' NITO';
       $('v_reward_next').textContent=S.nextReward+' NITO';
-      $('v_diff').textContent=fmtInt0(S.difficulty);$('v_diff').title=String(S.difficulty);
-      $('v_supply').textContent=fmtInt0(S.supply);$('v_supply').title=String(S.supply);
+      $('v_diff').textContent=fmtInt0(S.difficulty); $('v_diff').title=String(S.difficulty);
+      $('v_supply').textContent=fmtInt0(S.supply);   $('v_supply').title=String(S.supply);
       $('v_hash').textContent=(S.hashrate&&S.hashrate.human)?S.hashrate.human:'-';
-      $('v_remaining').textContent=fmtInt(S.blocksRemaining);
       $('lastUpdate').textContent=S.as_of_ms?fmtClock(S.as_of_ms):'-';
 
-      const prevHalving = (function(h){
-        const arr=[0,525600,1051200,1576800,5256000,10512000,26280000,105120000];
-        let p=0; for(const x of arr){ if(x<=h)p=x; else break } return p;
-      })(S.block);
-      const spanTotal = Math.max(1,(S.nextHalvingBlock - prevHalving));
-      const spanDone  = Math.max(0,(S.block - prevHalving));
-      const pct = Math.max(0,Math.min(100,100*spanDone/spanTotal));
-      $('progress').style.width = pct + '%';
+      const prevHalving=(h=>{const a=[0,525600,1051200,1576800,5256000,10512000,26280000,105120000];let p=0;for(const x of a){if(x<=h)p=x;else break}return p})(S.block);
+      const spanTotal=Math.max(1,(S.nextHalvingBlock-prevHalving));
+      const spanDone =Math.max(0,(S.block-prevHalving));
+      const pct=Math.max(0,Math.min(100,100*spanDone/spanTotal));
+      $('progress').style.width=pct+'%';
     }
 
     function renderTimer(){
-      const now = Date.now();
-      let remain = Math.max(0, Math.floor((S.targetHalvingTs - now)/1000));
+      const elapsed=Math.max(0,(Date.now()-S.as_of_ms)/1000);
+      let remain=Math.max(0,Math.floor(S.remaining_sec - elapsed));
+
       const d=Math.floor(remain/86400);
       const h=Math.floor((remain%86400)/3600);
       const m=Math.floor((remain%3600)/60);
       const s=Math.floor(remain%60);
       $('t_days').textContent=d; $('t_hours').textContent=h; $('t_minutes').textContent=m; $('t_seconds').textContent=s;
 
-      const blocksRemaining = Math.max(0, Math.ceil(remain / S.blockTimeSec));
-      $('v_remaining').textContent = fmtInt(blocksRemaining);
+      const blocks=Math.max(0,Math.ceil(remain/BLOCK_SEC));
+      $('v_remaining').textContent=fmtInt(blocks);
 
-      if(blocksRemaining<=0){ setStatus('🎉 Halving complete! Updating…'); resched(FETCH_NEAR_MS) }
-      else if(blocksRemaining<=10){ setStatus(`⚡ URGENT: Only ${blocksRemaining} blocks remaining! (refreshing every 10s)`,'urgent'); resched(FETCH_NEAR_MS) }
-      else if(blocksRemaining<=NEAR_THRESHOLD){ setStatus(`⚠️ Close to halving: ${blocksRemaining} blocks remaining`,'warning'); resched(FETCH_NEAR_MS) }
-      else{ setStatus(`✅ ${fmtInt(blocksRemaining)} blocks until next halving`); resched(FETCH_DEFAULT_MS) }
+      if(blocks<=0){ setStatus('🎉 Halving complete! Updating…'); resched(REFRESH_NEAR); }
+      else if(blocks<=10){ setStatus(`⚡ URGENT: Only ${blocks} blocks remaining! (every 10s)`,'urgent'); resched(REFRESH_NEAR); }
+      else if(blocks<=NEAR_THRESHOLD){ setStatus(`⚠️ Close to halving: ${blocks} blocks remaining`,'warning'); resched(REFRESH_NEAR); }
+      else{ setStatus(`✅ ${fmtInt(blocks)} blocks until next halving`); resched(REFRESH_DEFAULT); }
     }
 
     function setStatus(t,cls){const el=$('status');el.textContent=t;el.className='status'+(cls?' '+cls:'')}
+    function resched(ms){ if(refresh===ms) return; refresh=ms; if(timer) clearInterval(timer); timer=setInterval(fetchOnce,refresh); }
+    function showError(m){const el=$('error');el.textContent=m;el.style.display='block'}
+    function hideError(){$('error').style.display='none'}
 
-    function applyServerData(d){
+    function applyServer(d){
       S.block            = Number(d.block)||0;
       S.nextHalvingBlock = Number(d.nextHalvingBlock)||0;
       S.currentReward    = Number(d.currentReward)||512;
@@ -157,9 +158,8 @@
       S.difficulty       = Number(d.difficulty)||0;
       S.hashrate         = d.hashrate||{human:'-'};
       S.blocksRemaining  = Number(d.blocksRemaining)||0;
-      S.blockTimeSec     = Number(d.blockTimeSec)||60;
       S.as_of_ms         = Number(d.as_of_ms||d.serverTime)||Date.now();
-      S.targetHalvingTs  = Number(d.targetHalvingTs)|| (S.as_of_ms + S.blocksRemaining*S.blockTimeSec*1000);
+      S.remaining_sec    = S.blocksRemaining * BLOCK_SEC;  // règle simple
       renderStatic();
       renderTimer();
       hideError();
@@ -168,17 +168,13 @@
     async function fetchOnce(){
       try{
         const r=await fetch(API_URL+'?ts='+Date.now(),{cache:'no-store'});
-        if(!r.ok)throw new Error('Bad response ('+r.status+')');
+        if(!r.ok)throw new Error('HTTP '+r.status);
         const j=await r.json();
-        applyServerData(j);
+        applyServer(j);
       }catch(e){showError('Connection error: '+e.message)}
     }
 
-    function resched(ms){ if(currentFetchMS===ms) return; currentFetchMS=ms; if(fetchTimer) clearInterval(fetchTimer); fetchTimer=setInterval(fetchOnce,currentFetchMS) }
-    function showError(m){const el=$('error');el.textContent=m;el.style.display='block'}
-    function hideError(){$('error').style.display='none'}
-
-    (function init(){ fetchOnce(); setInterval(renderTimer,1000); resched(FETCH_DEFAULT_MS) })();
+    (function init(){ fetchOnce(); setInterval(renderTimer,1000); resched(REFRESH_DEFAULT); })();
   </script>
 </body>
 </html>
