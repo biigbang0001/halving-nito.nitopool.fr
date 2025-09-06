@@ -1,180 +1,260 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Nito Halving Countdown</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:Arial,Helvetica,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-    .brand{position:fixed;top:16px;left:16px;z-index:10;display:flex;align-items:center;gap:10px;opacity:.95}
-    .brand img{width:64px;height:64px;display:block}
-    .brand a{color:#ffeb3b;text-decoration:none;font-weight:bold;font-size:14px}
-    .brand a:hover{text-decoration:underline}
-    .container{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:20px;padding:32px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);max-width:980px;width:100%}
-    h1{font-size:2.4rem;text-shadow:2px 2px 4px rgba(0,0,0,.3);margin-bottom:8px}
-    .subtitle{opacity:.85;margin-bottom:24px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
-    .card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:16px}
-    .card h3{font-size:1rem;opacity:.9;margin-bottom:8px}
-    .value{font-size:1.8rem;font-weight:bold;color:#ffeb3b}
-    .countdown{margin:28px 0 8px}
-    .countdown h2{font-size:1.4rem;margin-bottom:14px;opacity:.95}
-    .time-grid{display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:12px;margin-bottom:18px}
-    .time-box{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:10px;padding:12px}
-    .time-num{display:block;font-size:1.8rem;font-weight:700;color:#4fc3f7}
-    .time-lbl{font-size:.9rem;opacity:.85}
-    .progress{height:18px;background:rgba(255,255,255,.2);border-radius:10px;overflow:hidden;margin-bottom:12px}
-    .progress>div{height:100%;background:linear-gradient(90deg,#4fc3f7,#29b6f6);width:2px;min-width:2px;transition:width .25s linear}
-    .status{font-size:1rem;margin:10px 0 18px;padding:10px;border-radius:8px;background:rgba(76,175,80,.2)}
-    .status.warning{background:rgba(255,193,7,.2);color:#ffc107}
-    .status.urgent{background:rgba(244,67,54,.2);color:#f44336;animation:pulse 2s infinite}
-    @keyframes pulse{0%{opacity:1}50%{opacity:.72}100%{opacity:1}}
-    .links{margin-top:18px;text-align:left}
-    .links h3{margin-bottom:12px}
-    .links-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-    .link-card{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:12px;padding:14px;transition:transform .2s ease,background .2s ease}
-    .link-card:hover{transform:translateY(-2px);background:rgba(255,255,255,.25)}
-    .link-card a{color:#4fc3f7;text-decoration:none;font-weight:700;display:block;margin-bottom:6px}
+    body{
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px
+    }
+    .logo{
+      position:fixed;top:16px;left:16px;width:56px;height:auto;image-rendering:auto;
+      pointer-events:none;user-select:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.3))
+    }
+    .container{
+      background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border-radius:20px;padding:32px;
+      text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.2);
+      max-width:1000px;width:100%
+    }
+    h1{font-size:2.4em;text-shadow:2px 2px 4px rgba(0,0,0,.3);margin-bottom:10px}
+    .current-info{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:24px 0 28px
+    }
+    .info-card{
+      background:rgba(255,255,255,.15);padding:16px;border-radius:14px;border:1px solid rgba(255,255,255,.22)
+    }
+    .info-card h3{font-size:1.02em;margin-bottom:6px;opacity:.9}
+    .value{font-size:1.5em;font-weight:700;color:#ffeb3b}
+    .countdown{margin:18px 0 8px}
+    .countdown h2{font-size:1.5em;margin-bottom:14px;opacity:.95}
+    .time-display{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin-bottom:14px
+    }
+    .time-unit{background:rgba(255,255,255,.2);padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.3)}
+    .time-number{font-size:1.8em;font-weight:700;display:block;color:#4fc3f7}
+    .time-label{font-size:.9em;opacity:.85}
+    .progress-bar{background:rgba(255,255,255,.2);height:16px;border-radius:10px;overflow:hidden;margin:16px 0}
+    .progress-fill{background:linear-gradient(90deg,#4fc3f7,#29b6f6);height:100%;border-radius:10px;transition:width .5s ease;min-width:2px}
+    .status{font-size:1.05em;margin:12px 0 6px;padding:10px;border-radius:8px;background:rgba(76,175,80,.22)}
+    .status.warning{background:rgba(255,193,7,.22);color:#ffc107}
+    .status.urgent{background:rgba(244,67,54,.22);color:#f44336;animation:pulse 2s infinite}
+    @keyframes pulse{0%{opacity:1}50%{opacity:.7}100%{opacity:1}}
+    .links-section{margin-top:20px;padding:16px;background:rgba(255,255,255,.1);border-radius:15px;border-left:4px solid #ffeb3b}
+    .links-section h3{margin-bottom:12px;font-size:1.2em}
+    .links-grid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:12px}
+    .link-card{background:rgba(255,255,255,.15);padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,.2);transition:all .25s ease}
+    .link-card:hover{background:rgba(255,255,255,.25);transform:translateY(-2px)}
+    .link-card a{color:#4fc3f7;text-decoration:none;font-weight:700;display:block;margin-bottom:4px}
     .link-card a:hover{color:#29b6f6}
-    .link-desc{font-size:.9rem;opacity:.85}
-    .foot{margin-top:12px;font-size:.92rem;opacity:.8}
-    .error{color:#ff5252;background:rgba(255,82,82,.12);padding:12px;border-radius:10px;margin:16px 0 0;display:none}
-    @media (max-width:640px){.time-grid{grid-template-columns:repeat(2,minmax(90px,1fr))}.links-grid{grid-template-columns:1fr}.brand img{width:48px;height:48px}}
+    .link-description{font-size:.9em;opacity:.85}
+    .halving-info{margin-top:18px;padding:14px;background:rgba(255,255,255,.1);border-radius:15px;border-left:4px solid #4fc3f7}
+    .error{color:#ff5252;background:rgba(255,82,82,.12);padding:12px;border-radius:10px;margin:14px 0;display:none}
+    .last-update{font-size:.95em;opacity:.85;margin-top:14px}
+    @media (max-width:600px){
+      .links-grid{grid-template-columns:1fr}
+      .logo{width:48px}
+    }
   </style>
 </head>
 <body>
-  <div class="brand">
-    <a href="https://nito.network/" target="_blank" rel="noopener"><img src="https://raw.githubusercontent.com/biigbang0001/wallet-nito/master/nito.png" alt="NITO logo"/></a>
-    <a href="https://nito.network/" target="_blank" rel="noopener">Nito Network</a>
-  </div>
+  <img class="logo" src="https://raw.githubusercontent.com/biigbang0001/wallet-nito/master/nito.png" alt="NITO"/>
 
   <div class="container">
     <h1>🚀 Nito Halving Countdown</h1>
-    <div class="subtitle"></div>
 
-    <div class="grid">
-      <div class="card"><h3>Current Block</h3><div class="value" id="v_block">-</div></div>
-      <div class="card"><h3>Next Halving Block</h3><div class="value" id="v_next">-</div></div>
-      <div class="card"><h3>Current Reward</h3><div class="value" id="v_reward_now">-</div></div>
-      <div class="card"><h3>Next Reward</h3><div class="value" id="v_reward_next">-</div></div>
-    </div>
-
-    <div class="grid">
-      <div class="card"><h3>Network Difficulty</h3><div class="value" id="v_diff">-</div></div>
-      <div class="card"><h3>Circulating Supply</h3><div class="value" id="v_supply">-</div></div>
-      <div class="card"><h3>Network Hashrate</h3><div class="value" id="v_hash">-</div></div>
-      <div class="card"><h3>Blocks Remaining</h3><div class="value" id="v_remaining">-</div></div>
+    <div class="current-info">
+      <div class="info-card"><h3>Current Block</h3><div class="value" id="currentBlock">-</div></div>
+      <div class="info-card"><h3>Next Halving Block</h3><div class="value" id="nextHalvingBlock">-</div></div>
+      <div class="info-card"><h3>Current Reward</h3><div class="value" id="currentReward">-</div></div>
+      <div class="info-card"><h3>Next Reward</h3><div class="value" id="nextReward">-</div></div>
+      <div class="info-card"><h3>Network Difficulty</h3><div class="value" id="difficulty">-</div></div>
+      <div class="info-card"><h3>Circulating Supply</h3><div class="value" id="supply">-</div></div>
+      <div class="info-card"><h3>Network Hashrate</h3><div class="value" id="hashrate">-</div></div>
     </div>
 
     <div class="countdown">
       <h2>Estimated Time to Halving</h2>
-      <div class="time-grid">
-        <div class="time-box"><span class="time-num" id="t_days">0</span><span class="time-lbl">Days</span></div>
-        <div class="time-box"><span class="time-num" id="t_hours">0</span><span class="time-lbl">Hours</span></div>
-        <div class="time-box"><span class="time-num" id="t_minutes">0</span><span class="time-lbl">Minutes</span></div>
-        <div class="time-box"><span class="time-num" id="t_seconds">0</span><span class="time-lbl">Seconds</span></div>
+      <div class="time-display">
+        <div class="time-unit"><span class="time-number" id="days">0</span><span class="time-label">Days</span></div>
+        <div class="time-unit"><span class="time-number" id="hours">0</span><span class="time-label">Hours</span></div>
+        <div class="time-unit"><span class="time-number" id="minutes">0</span><span class="time-label">Minutes</span></div>
+        <div class="time-unit"><span class="time-number" id="seconds">0</span><span class="time-label">Seconds</span></div>
       </div>
     </div>
 
-    <div class="progress"><div id="progress"></div></div>
-    <div class="status" id="status">Updating…</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div id="status" class="status">Updating…</div>
 
-    <div class="links">
+    <div class="halving-info">
+      <h3>📊 Halving Information</h3>
+      <p id="halvingDescription">Loading…</p>
+    </div>
+
+    <div class="links-section">
       <h3>🔗 Useful Links</h3>
       <div class="links-grid">
-        <div class="link-card"><a href="https://nito.network/" target="_blank" rel="noopener">🌐 Nito Network Official</a><div class="link-desc">Project website & docs</div></div>
-        <div class="link-card"><a href="https://explorer.nito.network/" target="_blank" rel="noopener">🔎 Nito Official Explorer</a><div class="link-desc">Blocks, transactions & addresses</div></div>
-        <div class="link-card"><a href="https://nito-explorer.nitopool.fr/" target="_blank" rel="noopener">🧭 NitoPool Explorer</a><div class="link-desc">Pool explorer & stats</div></div>
-        <div class="link-card"><a href="https://www.livecoinwatch.com/price/NitoCoin-_NITO" target="_blank" rel="noopener">📈 NITO Price (LiveCoinWatch)</a><div class="link-desc">Live price and market data</div></div>
+        <div class="link-card">
+          <a href="https://nito.network/" target="_blank" rel="noopener noreferrer">🌐 Nito Network Official</a>
+          <div class="link-description">Official website</div>
+        </div>
+        <div class="link-card">
+          <a href="https://explorer.nito.network/" target="_blank" rel="noopener noreferrer">🧭 Nito Explorer</a>
+          <div class="link-description">Blockchain explorer</div>
+        </div>
+        <div class="link-card">
+          <a href="https://www.livecoinwatch.com/price/NitoCoin-_NITO" target="_blank" rel="noopener noreferrer">📈 NITO Price</a>
+          <div class="link-description">Live market data</div>
+        </div>
+        <div class="link-card">
+          <a href="https://rabid-rabbit.org/account/trade/NITO-USDT" target="_blank" rel="noopener noreferrer">💱 Trade NITO/USDT</a>
+          <div class="link-description">Exchange</div>
+        </div>
       </div>
     </div>
 
-    <div class="foot">Last update: <span id="lastUpdate">-</span></div>
-    <div class="error" id="error"></div>
+    <div class="last-update">Last update: <span id="lastUpdate">-</span></div>
+    <div id="error" class="error"></div>
   </div>
 
   <script>
-    const API_URL='/nito_summary.php';
-    const BLOCK_SEC=60;
-    const REFRESH_DEFAULT=15000;
-    const REFRESH_NEAR=10000;
-    const NEAR_THRESHOLD=100;
+    const API_URL = '/nito_summary.php';
+    const REFRESH_DEFAULT = 10000;
+    const REFRESH_NEAR = 10000;
 
-    const $=id=>document.getElementById(id);
-    const fmtInt=n=>Number(n||0).toLocaleString();
-    const fmtInt0=n=>Math.round(Number(n||0)).toLocaleString();
-    const fmtClock=ms=>{try{return new Date(ms).toLocaleTimeString(undefined,{hour12:false})}catch{return'-'}};
+    let timer = null;
+    let refresh = 0;
 
-    let S={block:0,nextHalvingBlock:0,currentReward:512,nextReward:256,supply:0,difficulty:0,hashrate:{human:'-'},blocksRemaining:0,as_of_ms:0,remaining_sec:0};
-    let timer=null, refresh=REFRESH_DEFAULT;
+    let serverSkewMs = 0;
+    let targetHalvingTs = 0;
+    let blocksRemaining = 0;
+    let progressPct = 0;
+    let descText = '';
 
-    function renderStatic(){
-      $('v_block').textContent=fmtInt(S.block);
-      $('v_next').textContent=fmtInt(S.nextHalvingBlock);
-      $('v_reward_now').textContent=S.currentReward+' NITO';
-      $('v_reward_next').textContent=S.nextReward+' NITO';
-      $('v_diff').textContent=fmtInt0(S.difficulty); $('v_diff').title=String(S.difficulty);
-      $('v_supply').textContent=fmtInt0(S.supply);   $('v_supply').title=String(S.supply);
-      $('v_hash').textContent=(S.hashrate&&S.hashrate.human)?S.hashrate.human:'-';
-      $('lastUpdate').textContent=S.as_of_ms?fmtClock(S.as_of_ms):'-';
+    function fmtInt(n){ return Number(Math.round(n)).toLocaleString(); }
+    function el(id){ return document.getElementById(id); }
 
-      const prevHalving=(h=>{const a=[0,525600,1051200,1576800,5256000,10512000,26280000,105120000];let p=0;for(const x of a){if(x<=h)p=x;else break}return p})(S.block);
-      const spanTotal=Math.max(1,(S.nextHalvingBlock-prevHalving));
-      const spanDone =Math.max(0,(S.block-prevHalving));
-      const pct=Math.max(0,Math.min(100,100*spanDone/spanTotal));
-      $('progress').style.width=pct+'%';
-    }
-
-    function renderTimer(){
-      const elapsed=Math.max(0,(Date.now()-S.as_of_ms)/1000);
-      let remain=Math.max(0,Math.floor(S.remaining_sec - elapsed));
-
-      const d=Math.floor(remain/86400);
-      const h=Math.floor((remain%86400)/3600);
-      const m=Math.floor((remain%3600)/60);
-      const s=Math.floor(remain%60);
-      $('t_days').textContent=d; $('t_hours').textContent=h; $('t_minutes').textContent=m; $('t_seconds').textContent=s;
-
-      const blocks=Math.max(0,Math.ceil(remain/BLOCK_SEC));
-      $('v_remaining').textContent=fmtInt(blocks);
-
-      if(blocks<=0){ setStatus('🎉 Halving complete! Updating…'); resched(REFRESH_NEAR); }
-      else if(blocks<=10){ setStatus(`⚡ URGENT: Only ${blocks} blocks remaining! (every 10s)`,'urgent'); resched(REFRESH_NEAR); }
-      else if(blocks<=NEAR_THRESHOLD){ setStatus(`⚠️ Close to halving: ${blocks} blocks remaining`,'warning'); resched(REFRESH_NEAR); }
-      else{ setStatus(`✅ ${fmtInt(blocks)} blocks until next halving`); resched(REFRESH_DEFAULT); }
-    }
-
-    function setStatus(t,cls){const el=$('status');el.textContent=t;el.className='status'+(cls?' '+cls:'')}
-    function resched(ms){ if(refresh===ms) return; refresh=ms; if(timer) clearInterval(timer); timer=setInterval(fetchOnce,refresh); }
-    function showError(m){const el=$('error');el.textContent=m;el.style.display='block'}
-    function hideError(){$('error').style.display='none'}
-
-    function applyServer(d){
-      S.block            = Number(d.block)||0;
-      S.nextHalvingBlock = Number(d.nextHalvingBlock)||0;
-      S.currentReward    = Number(d.currentReward)||512;
-      S.nextReward       = Number(d.nextReward)||256;
-      S.supply           = Number(d.supply)||0;
-      S.difficulty       = Number(d.difficulty)||0;
-      S.hashrate         = d.hashrate||{human:'-'};
-      S.blocksRemaining  = Number(d.blocksRemaining)||0;
-      S.as_of_ms         = Number(d.as_of_ms||d.serverTime)||Date.now();
-      S.remaining_sec    = S.blocksRemaining * BLOCK_SEC;  // règle simple
-      renderStatic();
-      renderTimer();
-      hideError();
+    function resched(ms){
+      if (timer && refresh === ms) return;
+      refresh = ms;
+      if (timer) clearInterval(timer);
+      timer = setInterval(fetchOnce, refresh);
     }
 
     async function fetchOnce(){
       try{
-        const r=await fetch(API_URL+'?ts='+Date.now(),{cache:'no-store'});
-        if(!r.ok)throw new Error('HTTP '+r.status);
-        const j=await r.json();
+        const r = await fetch(API_URL + '?ts=' + Date.now(), {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
+        if(!r.ok) throw new Error('HTTP ' + r.status);
+        const j = await r.json();
         applyServer(j);
-      }catch(e){showError('Connection error: '+e.message)}
+      }catch(e){
+        showError('Connection error: ' + e.message);
+      }
     }
 
-    (function init(){ fetchOnce(); setInterval(renderTimer,1000); resched(REFRESH_DEFAULT); })();
+    function applyServer(j){
+      hideError();
+
+      const srvNow = j.serverTime || j.as_of_ms || Date.now();
+      serverSkewMs = Date.now() - srvNow;
+
+      el('currentBlock').textContent     = Number(j.block).toLocaleString();
+      el('nextHalvingBlock').textContent = Number(j.nextHalvingBlock).toLocaleString();
+      el('currentReward').textContent    = j.currentReward + ' NITO';
+      el('nextReward').textContent       = j.nextReward + ' NITO';
+
+      el('difficulty').textContent = fmtInt(j.difficulty);
+      el('supply').textContent     = fmtInt(j.supply);
+      el('hashrate').textContent   = (j.hashrate && j.hashrate.human) ? j.hashrate.human : '-';
+
+      blocksRemaining = j.blocksRemaining ?? Math.max(0, (j.nextHalvingBlock||0) - (j.block||0));
+      progressPct     = Math.max(0, Math.min(100, j.progressPct ?? 0));
+      targetHalvingTs = j.targetHalvingTs || 0;
+
+      el('progressFill').style.width = progressPct + '%';
+
+      if (blocksRemaining <= 0){
+        el('status').className = 'status';
+        el('status').textContent = '🎉 Halving complete! Updating…';
+        resched(REFRESH_DEFAULT);
+      } else if (blocksRemaining <= 10){
+        el('status').className = 'status urgent';
+        el('status').textContent = '⚡ URGENT: Only ' + blocksRemaining + ' blocks remaining! (Updating every 10s)';
+        resched(REFRESH_NEAR);
+      } else if (blocksRemaining <= 100){
+        el('status').className = 'status warning';
+        el('status').textContent = '⚠️ Close to halving: ' + blocksRemaining + ' blocks remaining';
+        resched(REFRESH_DEFAULT);
+      } else {
+        el('status').className = 'status';
+        el('status').textContent = '✅ ' + Number(blocksRemaining).toLocaleString() + ' blocks until next halving';
+        resched(REFRESH_DEFAULT);
+      }
+
+      descText = halvingDesc(j.currentReward, j.nextReward);
+      el('halvingDescription').textContent = descText;
+
+      const asOf = new Date(j.as_of_ms || j.serverTime || Date.now());
+      el('lastUpdate').textContent = asOf.toLocaleTimeString();
+
+      renderTimer();
+    }
+
+    function halvingDesc(cur, next){
+      const map = {
+        '512-256': 'First halving (512 → 256 Nito)',
+        '256-128': 'Second halving (256 → 128 Nito)',
+        '128-64' : 'Third halving (128 → 64 Nito)',
+        '64-32'  : 'Fourth halving (64 → 32 Nito)',
+        '32-8'   : 'Fifth halving (32 → 8 Nito)',
+        '8-2'    : 'Sixth halving (8 → 2 Nito)',
+        '2-0'    : 'Seventh halving (2 → 0 Nito)'
+      };
+      return map[`${cur}-${next}`] || 'Next reward update';
+    }
+
+    function renderTimer(){
+      if (!targetHalvingTs){ setZeros(); return; }
+      const clientNow = Date.now();
+      const etaMs = Math.max(0, targetHalvingTs - (clientNow - serverSkewMs));
+
+      const totalSec = Math.floor(etaMs/1000);
+      const days  = Math.floor(totalSec / 86400);
+      const hours = Math.floor((totalSec % 86400) / 3600);
+      const mins  = Math.floor((totalSec % 3600) / 60);
+      const secs  = totalSec % 60;
+
+      el('days').textContent = days;
+      el('hours').textContent = hours;
+      el('minutes').textContent = mins;
+      el('seconds').textContent = secs;
+    }
+
+    function setZeros(){
+      el('days').textContent = '0';
+      el('hours').textContent = '0';
+      el('minutes').textContent = '0';
+      el('seconds').textContent = '0';
+    }
+
+    function showError(msg){
+      const e = el('error'); e.textContent = msg; e.style.display = 'block';
+    }
+    function hideError(){ el('error').style.display = 'none'; }
+
+    (function init(){
+      fetchOnce();
+      setInterval(renderTimer, 1000);
+      resched(REFRESH_DEFAULT);
+      window.addEventListener('focus', fetchOnce);
+      window.addEventListener('online', fetchOnce);
+    })();
   </script>
 </body>
 </html>
