@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nito Halving Countdown</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            margin-bottom: 10px;
+        }
+
+        .current-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .info-card h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            opacity: 0.8;
+        }
+
+        .info-card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #ffeb3b;
+        }
+
+        .countdown {
+            margin: 40px 0;
+        }
+
+        .countdown h2 {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .time-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .time-unit {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .time-number {
+            font-size: 2em;
+            font-weight: bold;
+            display: block;
+            color: #4fc3f7;
+        }
+
+        .time-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.2);
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            min-width: 2px;
+        }
+
+        .status {
+            font-size: 1.1em;
+            margin: 20px 0;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .status.warning {
+            background: rgba(255, 193, 7, 0.2);
+            color: #ffc107;
+        }
+
+        .status.urgent {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .halving-info {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border-left: 4px solid #4fc3f7;
+        }
+
+        .links-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border-left: 4px solid #ffeb3b;
+        }
+
+        .links-section h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .link-card {
+            background: rgba(255, 255, 255, 0.15);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .link-card:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .link-card a {
+            color: #4fc3f7;
+            text-decoration: none;
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .link-card a:hover {
+            color: #29b6f6;
+        }
+
+        .link-description {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .error {
+            color: #ff5252;
+            background: rgba(255, 82, 82, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .last-update {
+            font-size: 0.9em;
+            opacity: 0.7;
+            margin-top: 20px;
+        }
+
+        .language-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .time-display {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .links-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .language-indicator {
+                position: static;
+                margin-bottom: 20px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-indicator" id="languageIndicator">🌐 Detecting language...</div>
+
+    <div class="container">
+        <div class="header">
+            <h1 data-translate="title">🚀 Nito Halving Countdown</h1>
+        </div>
+        
+        <div class="current-info">
+            <div class="info-card">
+                <h3 data-translate="current_block">Current Block</h3>
+                <div class="value" id="currentBlock">-</div>
+            </div>
+            <div class="info-card">
+                <h3 data-translate="next_halving_block">Next Halving Block</h3>
+                <div class="value" id="nextHalvingBlock">-</div>
+            </div>
+            <div class="info-card">
+                <h3 data-translate="current_reward">Current Reward</h3>
+                <div class="value" id="currentReward">-</div>
+            </div>
+            <div class="info-card">
+                <h3 data-translate="next_reward">Next Reward</h3>
+                <div class="value" id="nextReward">-</div>
+            </div>
+        </div>
+
+        <div class="countdown">
+            <h2 data-translate="estimated_time">Estimated Time to Halving</h2>
+            <div class="time-display">
+                <div class="time-unit">
+                    <span class="time-number" id="days">0</span>
+                    <span class="time-label" data-translate="days">Days</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-number" id="hours">0</span>
+                    <span class="time-label" data-translate="hours">Hours</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-number" id="minutes">0</span>
+                    <span class="time-label" data-translate="minutes">Minutes</span>
+                </div>
+                <div class="time-unit">
+                    <span class="time-number" id="seconds">0</span>
+                    <span class="time-label" data-translate="seconds">Seconds</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <div id="status" class="status" data-translate="status_updating">
+            Updating...
+        </div>
+
+        <div class="halving-info">
+            <h3 data-translate="halving_info">📊 Halving Information</h3>
+            <p id="halvingDescription" data-translate="loading_info">Loading information...</p>
+        </div>
+
+        <div class="links-section">
+            <h3 data-translate="useful_links">🔗 Useful Links</h3>
+            <div class="links-grid">
+                <div class="link-card">
+                    <a href="https://nito.network/" target="_blank" rel="noopener noreferrer">
+                        🌐 <span data-translate="nito_official">Nito Network Official</span>
+                    </a>
+                    <div class="link-description" data-translate="official_desc">Official Nito Network website</div>
+                </div>
+                <div class="link-card">
+                    <a href="https://www.livecoinwatch.com/price/NitoCoin-_NITO" target="_blank" rel="noopener noreferrer">
+                        📈 <span data-translate="nito_price">NITO Price Tracking</span>
+                    </a>
+                    <div class="link-description" data-translate="price_desc">Live price and market data</div>
+                </div>
+                <div class="link-card">
+                    <a href="https://rabid-rabbit.org/account/trade/NITO-USDT" target="_blank" rel="noopener noreferrer">
+                        💱 <span data-translate="trade_nito">Trade NITO/USDT</span>
+                    </a>
+                    <div class="link-description" data-translate="trade_desc">Exchange NITO tokens</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-update">
+            <span data-translate="last_update">Last update:</span> <span id="lastUpdate">-</span>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Translations
+        const translations = {
+            en: {
+                title: "🚀 Nito Halving Countdown",
+                current_block: "Current Block",
+                next_halving_block: "Next Halving Block",
+                current_reward: "Current Reward",
+                next_reward: "Next Reward",
+                estimated_time: "Estimated Time to Halving",
+                days: "Days",
+                hours: "Hours",
+                minutes: "Minutes",
+                seconds: "Seconds",
+                status_updating: "Updating...",
+                halving_info: "📊 Halving Information",
+                loading_info: "Loading information...",
+                useful_links: "🔗 Useful Links",
+                nito_official: "Nito Network Official",
+                official_desc: "Official Nito Network website",
+                nito_price: "NITO Price Tracking",
+                price_desc: "Live price and market data",
+                trade_nito: "Trade NITO/USDT",
+                trade_desc: "Exchange NITO tokens",
+                last_update: "Last update:",
+                blocks_until_halving: "blocks until next halving",
+                halving_complete: "🎉 Halving complete! Updating...",
+                urgent_blocks: "⚡ URGENT: Only",
+                blocks_remaining: "blocks remaining! (Updating every 10s)",
+                close_to_halving: "⚠️ Close to halving:",
+                first_halving: "First halving (512 → 256 Nito)",
+                second_halving: "Second halving (256 → 128 Nito)",
+                third_halving: "Third halving (128 → 64 Nito)",
+                fourth_halving: "Fourth halving (64 → 32 Nito)",
+                fifth_halving: "Fifth halving (32 → 8 Nito)",
+                sixth_halving: "Sixth halving (8 → 2 Nito)",
+                seventh_halving: "Seventh halving (2 → 0 Nito)"
+            },
+            fr: {
+                title: "🚀 Compte à Rebours Halving Nito",
+                current_block: "Bloc Actuel",
+                next_halving_block: "Prochain Bloc Halving",
+                current_reward: "Récompense Actuelle",
+                next_reward: "Prochaine Récompense",
+                estimated_time: "Temps Estimé jusqu'au Halving",
+                days: "Jours",
+                hours: "Heures",
+                minutes: "Minutes",
+                seconds: "Secondes",
+                status_updating: "Mise à jour...",
+                halving_info: "📊 Informations sur le Halving",
+                loading_info: "Chargement des informations...",
+                useful_links: "🔗 Liens Utiles",
+                nito_official: "Site Officiel Nito Network",
+                official_desc: "Site web officiel de Nito Network",
+                nito_price: "Suivi Prix NITO",
+                price_desc: "Prix en direct et données de marché",
+                trade_nito: "Échanger NITO/USDT",
+                trade_desc: "Échanger des tokens NITO",
+                last_update: "Dernière mise à jour:",
+                blocks_until_halving: "blocs jusqu'au prochain halving",
+                halving_complete: "🎉 Halving terminé! Mise à jour...",
+                urgent_blocks: "⚡ URGENT: Seulement",
+                blocks_remaining: "blocs restants! (Mise à jour toutes les 10s)",
+                close_to_halving: "⚠️ Proche du halving:",
+                first_halving: "Premier halving (512 → 256 Nito)",
+                second_halving: "Deuxième halving (256 → 128 Nito)",
+                third_halving: "Troisième halving (128 → 64 Nito)",
+                fourth_halving: "Quatrième halving (64 → 32 Nito)",
+                fifth_halving: "Cinquième halving (32 → 8 Nito)",
+                sixth_halving: "Sixième halving (8 → 2 Nito)",
+                seventh_halving: "Septième halving (2 → 0 Nito)"
+            },
+            es: {
+                title: "🚀 Cuenta Regresiva Halving Nito",
+                current_block: "Bloque Actual",
+                next_halving_block: "Próximo Bloque Halving",
+                current_reward: "Recompensa Actual",
+                next_reward: "Próxima Recompensa",
+                estimated_time: "Tiempo Estimado hasta Halving",
+                days: "Días",
+                hours: "Horas",
+                minutes: "Minutos",
+                seconds: "Segundos",
+                status_updating: "Actualizando...",
+                halving_info: "📊 Información del Halving",
+                loading_info: "Cargando información...",
+                useful_links: "🔗 Enlaces Útiles",
+                nito_official: "Nito Network Oficial",
+                official_desc: "Sitio web oficial de Nito Network",
+                nito_price: "Seguimiento Precio NITO",
+                price_desc: "Precio en vivo y datos del mercado",
+                trade_nito: "Intercambiar NITO/USDT",
+                trade_desc: "Intercambiar tokens NITO",
+                last_update: "Última actualización:",
+                blocks_until_halving: "bloques hasta próximo halving",
+                halving_complete: "🎉 ¡Halving completado! Actualizando...",
+                urgent_blocks: "⚡ URGENTE: Solo",
+                blocks_remaining: "bloques restantes! (Actualizando cada 10s)",
+                close_to_halving: "⚠️ Cerca del halving:",
+                first_halving: "Primer halving (512 → 256 Nito)",
+                second_halving: "Segundo halving (256 → 128 Nito)",
+                third_halving: "Tercer halving (128 → 64 Nito)",
+                fourth_halving: "Cuarto halving (64 → 32 Nito)",
+                fifth_halving: "Quinto halving (32 → 8 Nito)",
+                sixth_halving: "Sexto halving (8 → 2 Nito)",
+                seventh_halving: "Séptimo halving (2 → 0 Nito)"
+            }
+        };
+
+        class NitoHalvingCountdown {
+            constructor() {
+                this.currentBlock = 0;
+                this.updateInterval = null;
+                this.isNearHalving = false;
+                this.blockTime = 60;
+                this.currentLanguage = 'en';
+                
+                this.halvings = [
+                    { block: 525600, reward: 256, descKey: "first_halving" },
+                    { block: 1051200, reward: 128, descKey: "second_halving" },
+                    { block: 1576800, reward: 64, descKey: "third_halving" },
+                    { block: 5256000, reward: 32, descKey: "fourth_halving" },
+                    { block: 10512000, reward: 8, descKey: "fifth_halving" },
+                    { block: 26280000, reward: 2, descKey: "sixth_halving" },
+                    { block: 105120000, reward: 0, descKey: "seventh_halving" }
+                ];
+
+                this.init();
+            }
+
+            async init() {
+                await this.detectLanguage();
+                this.translatePage();
+                this.updateBlockCount();
+                this.startUpdateTimer();
+                setInterval(() => this.updateTimeDisplay(), 1000);
+            }
+
+            async detectLanguage() {
+                try {
+                    const response = await fetch('https://ipapi.co/json/');
+                    const data = await response.json();
+                    const countryCode = data.country_code?.toLowerCase();
+                    
+                    const languageMap = {
+                        'fr': 'fr', 'be': 'fr', 'ch': 'fr', 'mc': 'fr',
+                        'es': 'es', 'ar': 'es', 'mx': 'es', 'co': 'es', 've': 'es',
+                        'pe': 'es', 'ec': 'es', 'bo': 'es', 'py': 'es', 'uy': 'es',
+                        'cl': 'es', 'cr': 'es', 'pa': 'es', 'gt': 'es', 'hn': 'es',
+                        'sv': 'es', 'ni': 'es', 'cu': 'es', 'do': 'es'
+                    };
+
+                    this.currentLanguage = languageMap[countryCode] || 'en';
+                    
+                    const countryName = data.country_name || 'Unknown';
+                    document.getElementById('languageIndicator').textContent = 
+                        `🌐 ${countryName} (${this.currentLanguage.toUpperCase()})`;
+                        
+                } catch (error) {
+                    console.log('Language detection failed, using English');
+                    this.currentLanguage = 'en';
+                    document.getElementById('languageIndicator').textContent = '🌐 English (Default)';
+                }
+            }
+
+            translatePage() {
+                const elements = document.querySelectorAll('[data-translate]');
+                elements.forEach(element => {
+                    const key = element.getAttribute('data-translate');
+                    if (translations[this.currentLanguage] && translations[this.currentLanguage][key]) {
+                        element.textContent = translations[this.currentLanguage][key];
+                    }
+                });
+            }
+
+            async updateBlockCount() {
+                try {
+                    const response = await fetch('https://explorer.nito.network/api/getblockcount');
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    const data = await response.json();
+                    this.currentBlock = parseInt(data);
+                    
+                    this.updateDisplay();
+                    this.hideError();
+                    
+                } catch (error) {
+                    console.error('Error fetching block count:', error);
+                    this.showError(`Connection error: ${error.message}`);
+                }
+            }
+
+            updateDisplay() {
+                const nextHalving = this.getNextHalving();
+                if (!nextHalving) {
+                    this.showError('All halvings are complete!');
+                    return;
+                }
+
+                const currentReward = this.getCurrentReward();
+                const blocksRemaining = nextHalving.block - this.currentBlock;
+                
+                document.getElementById('currentBlock').textContent = this.currentBlock.toLocaleString();
+                document.getElementById('nextHalvingBlock').textContent = nextHalving.block.toLocaleString();
+                document.getElementById('currentReward').textContent = `${currentReward} NITO`;
+                document.getElementById('nextReward').textContent = `${nextHalving.reward} NITO`;
+                document.getElementById('halvingDescription').textContent = translations[this.currentLanguage][nextHalving.descKey];
+                
+                const previousHalving = this.getPreviousHalving();
+                const totalBlocks = nextHalving.block - (previousHalving ? previousHalving.block : 0);
+                const completedBlocks = this.currentBlock - (previousHalving ? previousHalving.block : 0);
+                const progressPercentage = Math.max(0, Math.min(100, (completedBlocks / totalBlocks) * 100));
+                
+                document.getElementById('progressFill').style.width = `${progressPercentage}%`;
+                
+                this.updateStatus(blocksRemaining);
+                this.updateLastUpdateTime();
+            }
+
+            updateTimeDisplay() {
+                const nextHalving = this.getNextHalving();
+                if (!nextHalving) return;
+
+                const blocksRemaining = nextHalving.block - this.currentBlock;
+                const secondsRemaining = blocksRemaining * this.blockTime;
+
+                if (secondsRemaining <= 0) {
+                    document.getElementById('days').textContent = '0';
+                    document.getElementById('hours').textContent = '0';
+                    document.getElementById('minutes').textContent = '0';
+                    document.getElementById('seconds').textContent = '0';
+                    return;
+                }
+
+                const days = Math.floor(secondsRemaining / (24 * 3600));
+                const hours = Math.floor((secondsRemaining % (24 * 3600)) / 3600);
+                const minutes = Math.floor((secondsRemaining % 3600) / 60);
+                const seconds = Math.floor(secondsRemaining % 60);
+
+                document.getElementById('days').textContent = days;
+                document.getElementById('hours').textContent = hours;
+                document.getElementById('minutes').textContent = minutes;
+                document.getElementById('seconds').textContent = seconds;
+            }
+
+            updateStatus(blocksRemaining) {
+                const statusElement = document.getElementById('status');
+                const t = translations[this.currentLanguage];
+                
+                if (blocksRemaining <= 0) {
+                    statusElement.textContent = t.halving_complete;
+                    statusElement.className = 'status';
+                } else if (blocksRemaining <= 10) {
+                    statusElement.textContent = `${t.urgent_blocks} ${blocksRemaining} ${t.blocks_remaining}`;
+                    statusElement.className = 'status urgent';
+                    this.setUpdateInterval(10000);
+                    this.isNearHalving = true;
+                } else if (blocksRemaining <= 100) {
+                    statusElement.textContent = `${t.close_to_halving} ${blocksRemaining} blocks remaining`;
+                    statusElement.className = 'status warning';
+                    this.setUpdateInterval(60000);
+                    this.isNearHalving = false;
+                } else {
+                    statusElement.textContent = `✅ ${blocksRemaining.toLocaleString()} ${t.blocks_until_halving}`;
+                    statusElement.className = 'status';
+                    this.setUpdateInterval(60000);
+                    this.isNearHalving = false;
+                }
+            }
+
+            setUpdateInterval(interval) {
+                if (this.updateInterval) {
+                    clearInterval(this.updateInterval);
+                }
+                this.startUpdateTimer(interval);
+            }
+
+            startUpdateTimer(interval = 60000) {
+                this.updateInterval = setInterval(() => {
+                    this.updateBlockCount();
+                }, interval);
+            }
+
+            getNextHalving() {
+                return this.halvings.find(halving => halving.block > this.currentBlock);
+            }
+
+            getPreviousHalving() {
+                const previousHalvings = this.halvings.filter(halving => halving.block <= this.currentBlock);
+                return previousHalvings[previousHalvings.length - 1] || null;
+            }
+
+            getCurrentReward() {
+                const previousHalving = this.getPreviousHalving();
+                if (!previousHalving) {
+                    return 512;
+                }
+                
+                const halvingIndex = this.halvings.indexOf(previousHalving);
+                if (halvingIndex === 0) {
+                    return 512;
+                }
+                return this.halvings[halvingIndex - 1].reward;
+            }
+
+            updateLastUpdateTime() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString();
+                document.getElementById('lastUpdate').textContent = timeString;
+            }
+
+            showError(message) {
+                const errorElement = document.getElementById('error');
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+
+            hideError() {
+                document.getElementById('error').style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            new NitoHalvingCountdown();
+        });
+    </script>
+</body>
+</html>
