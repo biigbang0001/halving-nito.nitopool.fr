@@ -1,154 +1,113 @@
 <?php
-// Réponse JSON + cache court
+// /var/www/halving-nito/nito_summary.php
 header('Content-Type: application/json; charset=utf-8');
-header('Cache-Control: public, max-age=5, stale-while-revalidate=30');
 header('Access-Control-Allow-Origin: *');
 
-// Constante : 1 bloc = 60 secondes (demande explicite)
-const BLOCK_SEC = 60;
+$cacheDir  = __DIR__ . '/cache';
+$cacheFile = $cacheDir . '/state.json';
+$ttl       = 5;                 // secondes
+$nowMs     = (int) round(microtime(true) * 1000);
 
-// Horodatage serveur (ms)
-$now_ms = (int) round(microtime(true) * 1000);
-
-// Dossier d’état (fallback si l’API upstream tombe)
-$cacheDir = __DIR__ . '/cache';
-$stateFn  = $cacheDir . '/state.json';
-if (!is_dir($cacheDir)) { @mkdir($cacheDir, 0775, true); }
-
-// ---- 1) Appel unique à l’API résumé ----
-$sum = null;
-$ch = curl_init('https://nito-explorer.nitopool.fr/ext/getsummary');
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_FOLLOWLOCATION => true,
-    CURLOPT_CONNECTTIMEOUT => 4,
-    CURLOPT_TIMEOUT        => 6,
-    CURLOPT_USERAGENT      => 'Nito-Halving-Server/1.2',
-    CURLOPT_SSL_VERIFYPEER => true,
-    CURLOPT_SSL_VERIFYHOST => 2,
-]);
-$body = curl_exec($ch);
-$err  = curl_error($ch);
-$code = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-if ($err === '' && $code === 200) {
-    $j = json_decode($body, true);
-    if (is_array($j) && isset($j['blockcount'])) { $sum = $j; }
+// Lecture cache frais
+if (is_file($cacheFile) && (time() - filemtime($cacheFile) < $ttl)) {
+    $raw = file_get_contents($cacheFile);
+    if ($raw !== false) { echo $raw; exit; }
 }
 
-// Fallback si besoin : relire le dernier état valide
-$lastState = [];
-if (is_file($stateFn)) {
-    $raw = @file_get_contents($stateFn);
-    if ($raw !== false) {
-        $tmp = json_decode($raw, true);
-        if (is_array($tmp)) { $lastState = $tmp; }
-    }
-}
-if (!$sum && isset($lastState['lastSummary'])) {
-    $sum = $lastState['lastSummary'];
-}
-if (!$sum) {
+// Récup données explorer (un seul appel)
+$src  = 'https://nito-explorer.nitopool.fr/ext/getsummary';
+$ctx  = stream_context_create(['http' => ['timeout' => 6]]);
+$json = @file_get_contents($src, false, $ctx);
+if ($json === false) {
+    // Dernier cache si dispo
+    if (is_file($cacheFile)) { readfile($cacheFile); exit; }
     http_response_code(502);
-    echo json_encode(['serverTime'=>$now_ms,'error'=>'upstream_unavailable'], JSON_UNESCAPED_SLASHES);
+    echo json_encode(['error' => 'upstream_unreachable']);
     exit;
 }
+$d = json_decode($json, true);
 
-// ---- 2) Extraction/normalisation ----
-$block      = (int)   ($sum['blockcount'] ?? 0);
-$difficulty = (float) ($sum['difficulty'] ?? 0.0);
-$supply     = (float) ($sum['supply']     ?? 0.0);
+// Extraction + normalisation
+$block        = isset($d['blockcount']) ? (int)$d['blockcount'] : 0;
+$difficulty   = isset($d['difficulty']) ? (float)$d['difficulty'] : 0.0;
+$supply       = isset($d['supply']) ? (float)$d['supply'] : 0.0;
 
-// Hashrate de l’API est en PH/s (string). On convertit correctement en TH/s/PH/s humain.
-$rawPH = is_numeric($sum['hashrate'] ?? null) ? (float) $sum['hashrate'] : 0.0;
-if ($rawPH >= 1.0) {
-    // PH/s
-    $hashUnit  = 'PH/s';
-    $hashVal   = round($rawPH, 2);
-    $hashHuman = rtrim(rtrim(number_format($hashVal, 2, '.', ' '), '0'), '.') . ' PH/s';
-} else {
-    // TH/s
-    $th        = $rawPH * 1000.0;
-    $hashUnit  = 'TH/s';
-    $hashVal   = round($th, 1);
-    $hashHuman = rtrim(rtrim(number_format($hashVal, 1, '.', ' '), '0'), '.') . ' TH/s';
-}
+// Le champ "hashrate" de l’explorer est en PH/s décimaux (ex: 0.2786 => 278.6 TH/s)
+$rawPH        = isset($d['hashrate']) ? (float)$d['hashrate'] : 0.0;
+$th           = $rawPH * 1000.0;
+$humanHash    = $th >= 1000 ? sprintf('%.1f PH/s', $th/1000) : sprintf('%.1f TH/s', $th);
 
-// ---- 3) Halvings + récompenses ----
-$halvings = [525600, 1051200, 1576800, 5256000, 10512000, 26280000, 105120000];
-
-$nextHalving = $halvings[count($halvings)-1];
-foreach ($halvings as $hb) { if ($hb > $block) { $nextHalving = $hb; break; } }
-
-function current_reward(int $h): int {
-    if     ($h <  525600)  return 512;
-    elseif ($h < 1051200)  return 256;
-    elseif ($h < 1576800)  return 128;
-    elseif ($h < 5256000)  return 64;
-    elseif ($h < 10512000) return 32;
-    elseif ($h < 26280000) return 8;
-    elseif ($h < 105120000)return 2;
-    else                    return 0;
-}
-function next_reward(int $h): int {
-    if     ($h <  525600)  return 256;
-    elseif ($h < 1051200)  return 128;
-    elseif ($h < 1576800)  return 64;
-    elseif ($h < 5256000)  return 32;
-    elseif ($h < 10512000) return 8;
-    elseif ($h < 26280000) return 2;
-    elseif ($h < 105120000)return 0;
-    else                    return 0;
-}
-
-$curReward  = current_reward($block);
-$nxtReward  = next_reward($block);
-
-// ---- 4) Calcul ETA FIXE : 60 s par bloc, fige entre deux blocs ----
-$blocksRemaining = max(0, $nextHalving - $block);
-
-// L’ETA ne dépend QUE du nombre de blocs restants et de 60 s/bloc.
-// On fige la cible entre deux rafraîchissements côté client :
-// targetHalvingTs = now + blocksRemaining * 60 s
-$targetHalvingTs = (int) ($now_ms + $blocksRemaining * BLOCK_SEC * 1000);
-
-// Progression du cycle courant (pour la barre)
-$prevHalving = 0;
-foreach ($halvings as $hb) { if ($hb <= $block) $prevHalving = $hb; else break; }
-$totalSpan = max(1, $nextHalving - $prevHalving);
-$doneSpan  = max(0, $block - $prevHalving);
-$progressPct = max(0.0, min(100.0, ($doneSpan / $totalSpan) * 100.0));
-
-// ---- 5) Sauvegarde d’un mini-état pour fallback ----
-$save = [
-    'lastSummary' => [
-        'blockcount' => $block,
-        'difficulty' => $difficulty,
-        'supply'     => $supply,
-        'hashrate'   => (string)$rawPH
-    ],
+// Halvings (paliers)
+$startReward  = 512;
+$halvings = [
+    ['name' => 'First halving',  'block' =>  525600,   'to' => 256],
+    ['name' => 'Second halving', 'block' => 1051200,   'to' => 128],
+    ['name' => 'Third halving',  'block' => 1576800,   'to' =>  64],
+    ['name' => 'Fourth halving', 'block' => 5256000,   'to' =>  32],
+    ['name' => 'Fifth halving',  'block' => 10512000,  'to' =>   8],
+    ['name' => 'Sixth halving',  'block' => 26280000,  'to' =>   2],
+    ['name' => 'Seventh halving','block' => 105120000, 'to' =>   0], // “0 (ou 1 en soft fork)”
 ];
-@file_put_contents($stateFn, json_encode($save, JSON_UNESCAPED_SLASHES), LOCK_EX);
 
-// ---- 6) Réponse JSON (supply/difficulty sans décimales) ----
-echo json_encode([
-    'serverTime'       => $now_ms,
-    'as_of_ms'         => $now_ms,
+// Trouver le prochain palier
+$nextIdx = null;
+for ($i = 0; $i < count($halvings); $i++) {
+    if ($block < $halvings[$i]['block']) { $nextIdx = $i; break; }
+}
+
+// Calculs récompenses + reste
+if ($nextIdx === null) {
+    // Au-delà du dernier palier
+    $currentReward     = 0;
+    $nextReward        = 0;
+    $nextHalvingBlock  = null;
+    $blocksRemaining   = 0;
+    $halvingLabel      = 'All halvings completed';
+    $targetHalvingTs   = $nowMs;
+} else {
+    $currentReward     = (int) max(0, $startReward >> $nextIdx);     // 512 / 2^i
+    $nextReward        = (int) max(0, $startReward >> ($nextIdx+1)); // 512 / 2^(i+1)
+    $nextHalvingBlock  = (int) $halvings[$nextIdx]['block'];
+    $blocksRemaining   = max(0, $nextHalvingBlock - $block);
+    $halvingLabel      = $halvings[$nextIdx]['name'] . " ({$currentReward} → {$nextReward} Nito)";
+    $blockTimeSec      = 60; // consigne réseau : 1 bloc = 60 s
+    $targetHalvingTs   = $nowMs + ($blocksRemaining * $blockTimeSec * 1000);
+}
+
+// Arrondis d’affichage demandés
+$displayDifficulty = (int) round($difficulty);
+$displaySupply     = (int) round($supply);
+
+// Objet retour
+$out = [
+    'serverTime'       => $nowMs,
+    'as_of_ms'         => $nowMs,                 // remis après écriture pour refléter le mtime
     'block'            => $block,
-    'supply'           => (int) round($supply),
-    'difficulty'       => (int) round($difficulty),
-    'hashrate'         => [
-        'unit'  => $hashUnit,
-        'human' => $hashHuman,
-        'value' => $hashVal,
-        'rawPH' => round($rawPH, 4)
-    ],
-    'blockTimeSec'     => BLOCK_SEC,            // toujours 60
-    'currentReward'    => $curReward,
-    'nextHalvingBlock' => $nextHalving,
-    'nextReward'       => $nxtReward,
+    'supply'           => $supply,
+    'supplyDisplay'    => $displaySupply,
+    'difficulty'       => $difficulty,
+    'difficultyDisplay'=> $displayDifficulty,
+    'hashrate'         => ['rawPH' => $rawPH, 'unit' => 'TH/s', 'human' => $humanHash, 'value' => $th],
+    'nextHalvingBlock' => $nextHalvingBlock,
+    'currentReward'    => $currentReward,
+    'nextReward'       => $nextReward,
     'blocksRemaining'  => $blocksRemaining,
-    'progressPct'      => $progressPct,
+    'halvingLabel'     => $halvingLabel,
     'targetHalvingTs'  => $targetHalvingTs
-], JSON_UNESCAPED_SLASHES);
+];
+
+// Cache disque pour fournir la même base à tous
+if (!is_dir($cacheDir)) { @mkdir($cacheDir, 0775, true); }
+$tmp = json_encode($out, JSON_UNESCAPED_UNICODE);
+if ($tmp !== false) {
+    @file_put_contents($cacheFile, $tmp, LOCK_EX);
+    $mt = filemtime($cacheFile);
+    if ($mt) {
+        $out['as_of_ms'] = (int)($mt * 1000);
+        $tmp = json_encode($out, JSON_UNESCAPED_UNICODE);
+        if ($tmp !== false) { @file_put_contents($cacheFile, $tmp, LOCK_EX); }
+    }
+}
+
+// Réponse
+echo file_get_contents($cacheFile) ?: $tmp;
