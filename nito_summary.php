@@ -35,8 +35,8 @@ $humanHash    = $th >= 1000 ? sprintf('%.1f PH/s', $th/1000) : sprintf('%.1f TH/
 
 $startReward  = 512;
 $halvings = [
-    ['name' => 'First halving',  'block' =>  525600,   'to' => 256],
-    ['name' => 'Second halving', 'block' => 1051200,   'to' => 128],
+    ['name' => 'First halving',  'block' =>  530000,   'to' => 256],
+    ['name' => 'Second halving', 'block' => 1042400,   'to' => 128],
     ['name' => 'Third halving',  'block' => 1576800,   'to' =>  64],
     ['name' => 'Fourth halving', 'block' => 5256000,   'to' =>  32],
     ['name' => 'Fifth halving',  'block' => 10512000,  'to' =>   8],
