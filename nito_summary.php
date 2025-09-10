@@ -161,7 +161,7 @@ $halvings = [
   ['name' => 'Second halving',  'block' =>  1042400,   'to' => 128],
   ['name' => 'Third halving',   'block' =>  1576800,   'to' =>  64],
   ['name' => 'Fourth halving',  'block' =>  5256000,   'to' =>  32],
-  ['name' => 'Fifth halving',   'block' => 10512000,   'to' =>   8],
+  ['name' => 'Fifth halving',   'block' => 10512000,   'to' =>  16],
   ['name' => 'Sixth halving',   'block' => 26280000,   'to' =>   2],
   ['name' => 'Seventh halving', 'block' => 105120000,  'to' =>   0], // overridden to 1 if soft fork
 ];
