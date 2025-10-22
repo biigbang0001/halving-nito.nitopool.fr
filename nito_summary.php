@@ -17,7 +17,7 @@ $CACHE_TTL_SEC      = 5;
 $CACHE_DIR          = __DIR__ . '/cache';
 $CACHE_FILE         = $CACHE_DIR . '/state.json';
 
-$EXPLORER_HOST      = 'https://nito-explorer.nitopool.fr';
+$EXPLORER_HOST      = 'https://explorer.nito.network';
 $API_GETBLOCKCOUNT  = $EXPLORER_HOST . '/api/getblockcount';
 $API_GETDIFFICULTY  = $EXPLORER_HOST . '/api/getdifficulty';
 $API_GETHASHPS      = $EXPLORER_HOST . '/api/getnetworkhashps';
